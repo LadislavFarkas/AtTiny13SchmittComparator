@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sat Nov 06 17:15:27 2021
+AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sun Nov 07 10:56:32 2021
 
 
 EQU  SIGNATURE_000 0000001e
@@ -298,4 +298,9 @@ DSEG SRC_PIN      00000060
 DSEG VAR_ADC      00000061
 CSEG RESET        0000000a
 CSEG MAIN         0000000d
-CSEG GET_ADC_VAR  00000022
+CSEG LOOP         0000000e
+CSEG GET_ADC_VAR  00000030
+CSEG IS_ON        00000025
+CSEG IS_OFF       00000022
+CSEG TURN_ON      00000028
+CSEG TURN_OFF     0000002c

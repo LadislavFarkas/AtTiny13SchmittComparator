@@ -26,6 +26,11 @@
   <VAR_ADC><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>23</LINE></VAR_ADC>
   <RESET><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>33</LINE></RESET>
   <MAIN><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>42</LINE></MAIN>
-  <GET_ADC_VAR><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>66</LINE></GET_ADC_VAR>
+  <LOOP><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>46</LINE></LOOP>
+  <GET_ADC_VAR><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>92</LINE></GET_ADC_VAR>
+  <IS_ON><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>76</LINE></IS_ON>
+  <IS_OFF><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>72</LINE></IS_OFF>
+  <TURN_ON><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>81</LINE></TURN_ON>
+  <TURN_OFF><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>86</LINE></TURN_OFF>
  </LABELS>
 </ASSEMBLER_INFO>

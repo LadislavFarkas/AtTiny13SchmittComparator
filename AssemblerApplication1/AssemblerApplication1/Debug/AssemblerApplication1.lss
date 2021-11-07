@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sun Nov 07 10:56:32 2021
+AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sun Nov 07 15:36:16 2021
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
@@ -535,91 +535,100 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
                                  	;r23	high ref. volatage
                                  
                                  	; r21 - ADC1
-00000e e001                      	ldi		r16, 1 << MUX0
-00000f 9300 0060                 	sts		SRC_PIN, r16
-000011 d01e                      	rcall	GET_ADC_VAR
-000012 9150 0061                 	lds		r21, VAR_ADC
+00000e e308                      	ldi		r16, 1 << ADC0D | 1 << ADC2D | 1 << ADC3D
+00000f bb04                      	out		DIDR0, r16
+000010 0000                      	nop
+000011 e001                      	ldi		r16, 1 << MUX0
+000012 9300 0060                 	sts		SRC_PIN, r16
+000014 d024                      	rcall	GET_ADC_VAR
+000015 9150 0061                 	lds		r21, VAR_ADC
                                  
                                  	; r22 - ADC2
-000014 e002                      	ldi		r16, 1 << MUX1
-000015 9300 0060                 	sts		SRC_PIN, r16
-000017 d018                      	rcall	GET_ADC_VAR
-000018 9160 0061                 	lds		r22, VAR_ADC
+000017 e20c                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC3D
+000018 bb04                      	out		DIDR0, r16
+000019 0000                      	nop
+00001a e002                      	ldi		r16, 1 << MUX1
+00001b 9300 0060                 	sts		SRC_PIN, r16
+00001d d01b                      	rcall	GET_ADC_VAR
+00001e 9160 0061                 	lds		r22, VAR_ADC
                                      
                                  	; r23 - ADC3
-00001a e003                      	ldi		r16, 1 << MUX1 | 1 << MUX0
-00001b 9300 0060                 	sts		SRC_PIN, r16
-00001d d012                      	rcall	GET_ADC_VAR
-00001e 9170 0061                 	lds		r23, VAR_ADC
+000020 e304                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC2D
+000021 bb04                      	out		DIDR0, r16
+000022 0000                      	nop
+000023 e003                      	ldi		r16, 1 << MUX1 | 1 << MUX0
+000024 9300 0060                 	sts		SRC_PIN, r16
+000026 d012                      	rcall	GET_ADC_VAR
+000027 9170 0061                 	lds		r23, VAR_ADC
                                  
-000020 fd10                      	sbrc	r17, 0
-000021 c003                      	rjmp	IS_ON
+000029 fd10                      	sbrc	r17, 0
+00002a c003                      	rjmp	IS_ON
                                  IS_OFF:
-000022 1757                      	cp		r21, r23
-000023 f420                      	brsh	TURN_ON
-000024 c007                      	rjmp	TURN_OFF
+00002b 1757                      	cp		r21, r23
+00002c f420                      	brsh	TURN_ON
+00002d c007                      	rjmp	TURN_OFF
                                  IS_ON:
-000025 1756                      	cp		r21, r22
-000026 f408                      	brsh	TURN_ON
-000027 c004                      	rjmp	TURN_OFF
+00002e 1756                      	cp		r21, r22
+00002f f408                      	brsh	TURN_ON
+000030 c004                      	rjmp	TURN_OFF
                                  
                                  TURN_ON:
-000028 e011                      	ldi		r17, 1
-000029 9ac0                      	sbi		PORTB, OUTPUT_PIN
-00002a 98c1                      	cbi		PORTB, NEG_OUTPUT_PIN
-00002b cfe2                      	rjmp	LOOP
+000031 e011                      	ldi		r17, 1
+000032 9ac0                      	sbi		PORTB, OUTPUT_PIN
+000033 98c1                      	cbi		PORTB, NEG_OUTPUT_PIN
+000034 cfd9                      	rjmp	LOOP
                                  TURN_OFF:
-00002c 2711                      	clr		r17
-00002d 9ac1                      	sbi		PORTB, NEG_OUTPUT_PIN
-00002e 98c0                      	cbi		PORTB, OUTPUT_PIN
-00002f cfde                      	rjmp	LOOP
+000035 2711                      	clr		r17
+000036 9ac1                      	sbi		PORTB, NEG_OUTPUT_PIN
+000037 98c0                      	cbi		PORTB, OUTPUT_PIN
+000038 cfd5                      	rjmp	LOOP
                                  
                                  GET_ADC_VAR:
-000030 930f                      	push	r16
-000031 93ef                      	push	zl
-000032 93ff                      	push	zh
+000039 930f                      	push	r16
+00003a 93ef                      	push	zl
+00003b 93ff                      	push	zh
                                  
-000033 9100 0060                 	lds		r16, SRC_PIN
-000035 b907                      	out		ADMUX, r16
-000036 0000                      	nop
+00003c 9100 0060                 	lds		r16, SRC_PIN
+00003e b907                      	out		ADMUX, r16
+00003f 0000                      	nop
                                  	
                                  	; VCC used as analog reference
                                  	; left adjusted result
-000037 9a3d                      	sbi		ADMUX, ADLAR
-000038 0000                      	nop
+000040 9a3d                      	sbi		ADMUX, ADLAR
+000041 0000                      	nop
                                  
                                  	; Prescaller division factor 2
                                  	; Interupt disabled
                                  	; Auto trigger disabled
                                  	; Single converzion
                                  	; ADC enable
-000039 9a37                      	sbi		ADCSRA, ADEN
-00003a 0000                      	nop
-00003b 9a36                      	sbi		ADCSRA, ADSC
-00003c 0000                      	nop
-                                 
-00003d 9b36                      	sbis	ADCSRA, ADSC
-00003e cffe                      	rjmp	PC-1
-                                 	
-00003f 9936                      	sbic	ADCSRA, ADSC
-000040 cffe                      	rjmp	PC-1
-                                 	;in		r16, ADCL ; no need, because ADLAR is used
-000041 b105                      	in		r16, ADCH
-                                 
-000042 9a34                      	sbi		ADCSRA, ADIF
+000042 9a37                      	sbi		ADCSRA, ADEN
 000043 0000                      	nop
+000044 9a36                      	sbi		ADCSRA, ADSC
+000045 0000                      	nop
                                  
-000044 e6e1                      	ldi		zl, low(VAR_ADC)
-000045 e0f0                      	ldi		zh, high(VAR_ADC)
-000046 8300                      	st		Z, r16
+000046 9b36                      	sbis	ADCSRA, ADSC
+000047 cffe                      	rjmp	PC-1
                                  	
-000047 9837                      	cbi		ADCSRA, ADEN
-000048 0000                      	nop
+000048 9936                      	sbic	ADCSRA, ADSC
+000049 cffe                      	rjmp	PC-1
+                                 	;in		r16, ADCL ; no need, because ADLAR is used
+00004a b105                      	in		r16, ADCH
                                  
-000049 91ff                      	pop		zh
-00004a 91ef                      	pop		zl
-00004b 910f                      	pop		r16
-00004c 9508                      	ret
+00004b 9a34                      	sbi		ADCSRA, ADIF
+00004c 0000                      	nop
+                                 
+00004d e6e1                      	ldi		zl, low(VAR_ADC)
+00004e e0f0                      	ldi		zh, high(VAR_ADC)
+00004f 8300                      	st		Z, r16
+                                 	
+000050 9837                      	cbi		ADCSRA, ADEN
+000051 0000                      	nop
+                                 
+000052 91ff                      	pop		zh
+000053 91ef                      	pop		zl
+000054 910f                      	pop		r16
+000055 9508                      	ret
 
 
 RESOURCE USE INFORMATION
@@ -639,7 +648,7 @@ counted separately from r26..r31 here.
 "ATtiny13A" register use summary:
 x  :   0 y  :   0 z  :   1 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:  14 r17:   4 r18:   0 r19:   0 r20:   0 
+r13:   0 r14:   0 r15:   0 r16:  20 r17:   4 r18:   0 r19:   0 r20:   0 
 r21:   3 r22:   2 r23:   2 r24:   0 r25:   0 r26:   0 r27:   0 r28:   0 
 r29:   0 r30:   3 r31:   3 
 Registers used: 8 out of 35 (22.9%)
@@ -654,9 +663,9 @@ brvs  :   0 bset  :   0 bst   :   0 cbi   :   3 cbr   :   0 clc   :   0
 clh   :   0 cli   :   1 cln   :   0 clr   :   2 cls   :   0 clt   :   0 
 clv   :   0 clz   :   0 com   :   0 cp    :   2 cpc   :   0 cpi   :   0 
 cpse  :   0 dec   :   0 eor   :   0 icall :   0 ijmp  :   0 in    :   1 
-inc   :   0 ld    :   0 ldd   :   0 ldi   :   7 lds   :   4 lpm   :   0 
-lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :   6 
-or    :   0 ori   :   0 out   :   2 pop   :   3 push  :   3 rcall :   3 
+inc   :   0 ld    :   0 ldd   :   0 ldi   :  10 lds   :   4 lpm   :   0 
+lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :   9 
+or    :   0 ori   :   0 out   :   5 pop   :   3 push  :   3 rcall :   3 
 ret   :   1 reti  :   0 rjmp  :   8 rol   :   0 ror   :   0 sbc   :   0 
 sbci  :   0 sbi   :   6 sbic  :   1 sbis  :   1 sbiw  :   0 sbr   :   0 
 sbrc  :   1 sbrs  :   0 sec   :   0 seh   :   0 sei   :   0 sen   :   0 
@@ -668,7 +677,7 @@ Instructions used: 21 out of 105 (20.0%)
 "ATtiny13A" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x00009a    136      0    136    1024  13.3%
+[.cseg] 0x000000 0x0000ac    154      0    154    1024  15.0%
 [.dseg] 0x000060 0x000062      0      2      2      64   3.1%
 [.eseg] 0x000000 0x000000      0      0      0      64   0.0%
 

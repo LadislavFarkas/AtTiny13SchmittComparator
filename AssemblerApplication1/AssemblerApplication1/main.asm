@@ -50,18 +50,27 @@ LOOP:
 	;r23	high ref. volatage
 
 	; r21 - ADC1
+	ldi		r16, 1 << ADC0D | 1 << ADC2D | 1 << ADC3D
+	out		DIDR0, r16
+	nop
 	ldi		r16, 1 << MUX0
 	sts		SRC_PIN, r16
 	rcall	GET_ADC_VAR
 	lds		r21, VAR_ADC
 
 	; r22 - ADC2
+	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC3D
+	out		DIDR0, r16
+	nop
 	ldi		r16, 1 << MUX1
 	sts		SRC_PIN, r16
 	rcall	GET_ADC_VAR
 	lds		r22, VAR_ADC
     
 	; r23 - ADC3
+	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC2D
+	out		DIDR0, r16
+	nop
 	ldi		r16, 1 << MUX1 | 1 << MUX0
 	sts		SRC_PIN, r16
 	rcall	GET_ADC_VAR

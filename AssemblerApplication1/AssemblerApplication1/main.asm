@@ -5,11 +5,11 @@
 ; Author : Ladislav Farkas
 ;
 
-;
-;			RST	VCC
-;	ADC3	PB4	PB2		ADC1
-;	ADC2	PB3	PB1		-
-;			GND	PB0		-
+;				   AtTiny13A
+;				    RST	VCC
+;	(upper treshold)    ADC3    PB4	PB2	ADC1 (input signal)
+;	(lower treshold)    ADC2    PB3	PB1	!OUTPUT
+;				    GND	PB0	OUTPUT
 ;
 
 .equ	OUTPUT_PIN = PB0
@@ -19,115 +19,148 @@
 
 .org	SRAM_START
 
-SRC_PIN: .BYTE 1
-VAR_ADC: .BYTE 1
+BUFFER	: .BYTE 6   ; UPPER L H | LOWER L H | INPUT L H
 
 .cseg
 
-.org 0
-
+.org	0
 rjmp	RESET
 
-.org INT_VECTORS_SIZE
+.org	ADCCaddr
+rjmp	ADC_IRQ
+
+.org	INT_VECTORS_SIZE
 
 RESET:
-	; SPL is already set
+    cli
 
-	cli
-	
-	; Output pins
-	ldi		r16, 1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
-	out		DDRB, r16
+    ldi	    r16,    1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
+    out	    DDRB,   r16
+    nop
 
+    in	    r16,    MCUCR
+    ori	    r16,    1 << SE
+    out	    MCUCR,  r16
+    nop
+
+; input registers: -
+; output registers: Z, r16, r17
 LOOP:
-	;r16	temporary
-	;r21	input voltage
-	;r22	low ref. voltage
-	;r23	high ref. volatage
+    ldi	    zl,	    LOW(BUFFER)
+    ldi	    zh,	    HIGH(BUFFER)
 
-	; r21 - ADC1
-	ldi		r16, 1 << ADC0D | 1 << ADC2D | 1 << ADC3D
-	out		DIDR0, r16
-	nop
-	ldi		r16, 1 << MUX0
-	sts		SRC_PIN, r16
-	rcall	GET_ADC_VAR
-	lds		r21, VAR_ADC
+    ldi	    r16,    1 << ADC0D | 1 << ADC1D | 1 << ADC2D
+    ldi	    r17,    1 << MUX1 | 1 << MUX0
+    rcall   READ_ADC
 
-	; r22 - ADC2
-	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC3D
-	out		DIDR0, r16
-	nop
-	ldi		r16, 1 << MUX1
-	sts		SRC_PIN, r16
-	rcall	GET_ADC_VAR
-	lds		r22, VAR_ADC
+    ldi	    r16,    1 << ADC0D | 1 << ADC1D | 1 << ADC3D
+    ldi	    r17,    1 << MUX1
+    rcall   READ_ADC
+
+    ldi	    r16,    1 << ADC0D | 1 << ADC2D | 1 << ADC3D
+    ldi	    r17,    1 << MUX0
+    rcall   READ_ADC
+
+    rcall   PROCESS
+
+    rjmp    LOOP
     
-	; r23 - ADC3
-	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC2D
-	out		DIDR0, r16
-	nop
-	ldi		r16, 1 << MUX1 | 1 << MUX0
-	sts		SRC_PIN, r16
-	rcall	GET_ADC_VAR
-	lds		r23, VAR_ADC
+; input registers: Z
+; output registers: Z
+PROCESS:
+    push    r16
+    push    r17
+    push    r18
+    push    r19
 
-	cp		r22, r21
-	brsh	TURN_OFF
-	cp		r21, r23
-	brsh	TURN_ON
-	brsh	LOOP
-TURN_ON:
-	sbi		PORTB, OUTPUT_PIN
-	cbi		PORTB, NEG_OUTPUT_PIN
-	rjmp	LOOP
-TURN_OFF:
-	sbi		PORTB, NEG_OUTPUT_PIN
-	cbi		PORTB, OUTPUT_PIN
-	rjmp	LOOP
+    ; input value
+    ld	    r16,    -Z ; H
+    ld	    r17,    -Z ; L
 
-GET_ADC_VAR:
-	push	r16
-	push	zl
-	push	zh
+    ; lower treshold H L
+    ld	    r18,    -Z ; H
+    ld	    r19,    -Z ; L
 
-	lds		r16, SRC_PIN
-	out		ADMUX, r16
-	nop
-	
-	; VCC used as analog reference
-	; left adjusted result
-	sbi		ADMUX, ADLAR
-	nop
+    cp	    r16,    r18 ; H
+    brlo    PROCESS_TURN_OFF
+    breq    PROCESS_CHECK_LOWER_L
+    rjmp    PROCES_CHECK_UPPER_H
 
-	; Prescaller division factor 2
-	; Interupt disabled
-	; Auto trigger disabled
-	; Single converzion
-	; ADC enable
-	sbi		ADCSRA, ADEN
-	nop
-	sbi		ADCSRA, ADSC
-	nop
-	nop
-	nop
+PROCESS_CHECK_LOWER_L:
+    cp	    r17,    r19 ; L
+    brlo    PROCESS_TURN_OFF
 
-	sbic	ADCSRA, ADSC
-	rjmp	PC-1
-	;in		r16, ADCL ; no need, because ADLAR is used
-	in		r16, ADCH
+PROCES_CHECK_UPPER_H:
+    ; upper treshold H L
+    ld	    r18,    -Z ; H
+    ld	    r19,    -Z ; L
 
-	sbi		ADCSRA, ADIF
-	nop
+    cp	    r18,    r16 ; H
+    brlo    PROCESS_TURN_ON
+    breq    PROCESS_CHECK_UPPER_L
+    rjmp    PROCESS_RET
 
-	ldi		zl, low(VAR_ADC)
-	ldi		zh, high(VAR_ADC)
-	st		Z, r16
-	
-	cbi		ADCSRA, ADEN
-	nop
+PROCESS_CHECK_UPPER_L:
+    cp	    r19,    r17 ; L
+    brlo    PROCESS_TURN_ON
+    rjmp    PROCESS_RET
 
-	pop		zh
-	pop		zl
-	pop		r16
-	ret
+PROCESS_TURN_ON:
+    sbi	    PORTB,  OUTPUT_PIN
+    cbi	    PORTB,  NEG_OUTPUT_PIN
+    rjmp    PROCESS_RET
+
+PROCESS_TURN_OFF:
+    sbi	    PORTB,  NEG_OUTPUT_PIN
+    cbi	    PORTB,  OUTPUT_PIN
+    
+PROCESS_RET:
+    pop	    r19
+    pop	    r18
+    pop	    r17
+    pop	    r16
+    ret
+
+; input registers: r16, r17
+; output registers: -
+READ_ADC:
+    out	    DIDR0,  r16
+    nop
+
+    out	    ADMUX,  r17
+    nop
+    nop
+
+    sbi	    ADCSRA, ADLAR
+    nop
+    sbi	    ADCSRA, ADIE
+    nop
+    sbi	    ADCSRA, ADEN
+    nop
+    sbi	    ADCSRA, ADSC
+    nop
+    nop
+    nop
+
+    sei
+    sleep
+    cli
+
+    cbi	    ADCSRA, ADEN
+    nop
+
+    ret
+
+; input registers: Z
+; output registers: Z
+ADC_IRQ:
+    push    r16
+
+    in	    r16,    ADCL
+    st	    Z+,	    r16
+    in	    r16,    ADCH
+    st	    Z+,	    r16
+
+    pop	    r16
+
+    reti

@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sun Nov 07 15:36:16 2021
+AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Mon Nov 08 10:30:25 2021
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
@@ -524,10 +524,6 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
 00000b e003                      	ldi		r16, 1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
 00000c bb07                      	out		DDRB, r16
                                  
-                                 MAIN:
-                                 	;r17	on/off state (bool)
-                                 
-00000d 2711                      	clr		r17
                                  LOOP:
                                  	;r16	temporary
                                  	;r21	input voltage
@@ -535,100 +531,91 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
                                  	;r23	high ref. volatage
                                  
                                  	; r21 - ADC1
-00000e e308                      	ldi		r16, 1 << ADC0D | 1 << ADC2D | 1 << ADC3D
-00000f bb04                      	out		DIDR0, r16
-000010 0000                      	nop
-000011 e001                      	ldi		r16, 1 << MUX0
-000012 9300 0060                 	sts		SRC_PIN, r16
-000014 d024                      	rcall	GET_ADC_VAR
-000015 9150 0061                 	lds		r21, VAR_ADC
+00000d e308                      	ldi		r16, 1 << ADC0D | 1 << ADC2D | 1 << ADC3D
+00000e bb04                      	out		DIDR0, r16
+00000f 0000                      	nop
+000010 e001                      	ldi		r16, 1 << MUX0
+000011 9300 0060                 	sts		SRC_PIN, r16
+000013 d01f                      	rcall	GET_ADC_VAR
+000014 9150 0061                 	lds		r21, VAR_ADC
                                  
                                  	; r22 - ADC2
-000017 e20c                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC3D
-000018 bb04                      	out		DIDR0, r16
-000019 0000                      	nop
-00001a e002                      	ldi		r16, 1 << MUX1
-00001b 9300 0060                 	sts		SRC_PIN, r16
-00001d d01b                      	rcall	GET_ADC_VAR
-00001e 9160 0061                 	lds		r22, VAR_ADC
+000016 e20c                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC3D
+000017 bb04                      	out		DIDR0, r16
+000018 0000                      	nop
+000019 e002                      	ldi		r16, 1 << MUX1
+00001a 9300 0060                 	sts		SRC_PIN, r16
+00001c d016                      	rcall	GET_ADC_VAR
+00001d 9160 0061                 	lds		r22, VAR_ADC
                                      
                                  	; r23 - ADC3
-000020 e304                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC2D
-000021 bb04                      	out		DIDR0, r16
-000022 0000                      	nop
-000023 e003                      	ldi		r16, 1 << MUX1 | 1 << MUX0
-000024 9300 0060                 	sts		SRC_PIN, r16
-000026 d012                      	rcall	GET_ADC_VAR
-000027 9170 0061                 	lds		r23, VAR_ADC
+00001f e304                      	ldi		r16, 1 << ADC0D | 1 << ADC1D | 1 << ADC2D
+000020 bb04                      	out		DIDR0, r16
+000021 0000                      	nop
+000022 e003                      	ldi		r16, 1 << MUX1 | 1 << MUX0
+000023 9300 0060                 	sts		SRC_PIN, r16
+000025 d00d                      	rcall	GET_ADC_VAR
+000026 9170 0061                 	lds		r23, VAR_ADC
                                  
-000029 fd10                      	sbrc	r17, 0
-00002a c003                      	rjmp	IS_ON
-                                 IS_OFF:
-00002b 1757                      	cp		r21, r23
-00002c f420                      	brsh	TURN_ON
-00002d c007                      	rjmp	TURN_OFF
-                                 IS_ON:
-00002e 1756                      	cp		r21, r22
-00002f f408                      	brsh	TURN_ON
-000030 c004                      	rjmp	TURN_OFF
-                                 
+000028 1765                      	cp		r22, r21
+000029 f430                      	brsh	TURN_OFF
+00002a 1757                      	cp		r21, r23
+00002b f408                      	brsh	TURN_ON
+00002c f700                      	brsh	LOOP
                                  TURN_ON:
-000031 e011                      	ldi		r17, 1
-000032 9ac0                      	sbi		PORTB, OUTPUT_PIN
-000033 98c1                      	cbi		PORTB, NEG_OUTPUT_PIN
-000034 cfd9                      	rjmp	LOOP
+00002d 9ac0                      	sbi		PORTB, OUTPUT_PIN
+00002e 98c1                      	cbi		PORTB, NEG_OUTPUT_PIN
+00002f cfdd                      	rjmp	LOOP
                                  TURN_OFF:
-000035 2711                      	clr		r17
-000036 9ac1                      	sbi		PORTB, NEG_OUTPUT_PIN
-000037 98c0                      	cbi		PORTB, OUTPUT_PIN
-000038 cfd5                      	rjmp	LOOP
+000030 9ac1                      	sbi		PORTB, NEG_OUTPUT_PIN
+000031 98c0                      	cbi		PORTB, OUTPUT_PIN
+000032 cfda                      	rjmp	LOOP
                                  
                                  GET_ADC_VAR:
-000039 930f                      	push	r16
-00003a 93ef                      	push	zl
-00003b 93ff                      	push	zh
+000033 930f                      	push	r16
+000034 93ef                      	push	zl
+000035 93ff                      	push	zh
                                  
-00003c 9100 0060                 	lds		r16, SRC_PIN
-00003e b907                      	out		ADMUX, r16
-00003f 0000                      	nop
+000036 9100 0060                 	lds		r16, SRC_PIN
+000038 b907                      	out		ADMUX, r16
+000039 0000                      	nop
                                  	
                                  	; VCC used as analog reference
                                  	; left adjusted result
-000040 9a3d                      	sbi		ADMUX, ADLAR
-000041 0000                      	nop
+00003a 9a3d                      	sbi		ADMUX, ADLAR
+00003b 0000                      	nop
                                  
                                  	; Prescaller division factor 2
                                  	; Interupt disabled
                                  	; Auto trigger disabled
                                  	; Single converzion
                                  	; ADC enable
-000042 9a37                      	sbi		ADCSRA, ADEN
-000043 0000                      	nop
-000044 9a36                      	sbi		ADCSRA, ADSC
-000045 0000                      	nop
+00003c 9a37                      	sbi		ADCSRA, ADEN
+00003d 0000                      	nop
+00003e 9a36                      	sbi		ADCSRA, ADSC
+00003f 0000                      	nop
+000040 0000                      	nop
+000041 0000                      	nop
                                  
-000046 9b36                      	sbis	ADCSRA, ADSC
-000047 cffe                      	rjmp	PC-1
-                                 	
-000048 9936                      	sbic	ADCSRA, ADSC
-000049 cffe                      	rjmp	PC-1
+000042 9936                      	sbic	ADCSRA, ADSC
+000043 cffe                      	rjmp	PC-1
                                  	;in		r16, ADCL ; no need, because ADLAR is used
-00004a b105                      	in		r16, ADCH
+000044 b105                      	in		r16, ADCH
                                  
-00004b 9a34                      	sbi		ADCSRA, ADIF
-00004c 0000                      	nop
+000045 9a34                      	sbi		ADCSRA, ADIF
+000046 0000                      	nop
                                  
-00004d e6e1                      	ldi		zl, low(VAR_ADC)
-00004e e0f0                      	ldi		zh, high(VAR_ADC)
-00004f 8300                      	st		Z, r16
+000047 e6e1                      	ldi		zl, low(VAR_ADC)
+000048 e0f0                      	ldi		zh, high(VAR_ADC)
+000049 8300                      	st		Z, r16
                                  	
-000050 9837                      	cbi		ADCSRA, ADEN
-000051 0000                      	nop
+00004a 9837                      	cbi		ADCSRA, ADEN
+00004b 0000                      	nop
                                  
-000052 91ff                      	pop		zh
-000053 91ef                      	pop		zl
-000054 910f                      	pop		r16
-000055 9508                      	ret
+00004c 91ff                      	pop		zh
+00004d 91ef                      	pop		zl
+00004e 910f                      	pop		r16
+00004f 9508                      	ret
 
 
 RESOURCE USE INFORMATION
@@ -648,36 +635,36 @@ counted separately from r26..r31 here.
 "ATtiny13A" register use summary:
 x  :   0 y  :   0 z  :   1 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:  20 r17:   4 r18:   0 r19:   0 r20:   0 
+r13:   0 r14:   0 r15:   0 r16:  20 r17:   0 r18:   0 r19:   0 r20:   0 
 r21:   3 r22:   2 r23:   2 r24:   0 r25:   0 r26:   0 r27:   0 r28:   0 
 r29:   0 r30:   3 r31:   3 
-Registers used: 8 out of 35 (22.9%)
+Registers used: 7 out of 35 (20.0%)
 
 "ATtiny13A" instruction use summary:
 .lds  :   0 .sts  :   0 adc   :   0 add   :   0 adiw  :   0 and   :   0 
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
 brcc  :   0 brcs  :   0 break :   0 breq  :   0 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :   0 brpl  :   0 brsh  :   2 brtc  :   0 brts  :   0 brvc  :   0 
+brne  :   0 brpl  :   0 brsh  :   3 brtc  :   0 brts  :   0 brvc  :   0 
 brvs  :   0 bset  :   0 bst   :   0 cbi   :   3 cbr   :   0 clc   :   0 
-clh   :   0 cli   :   1 cln   :   0 clr   :   2 cls   :   0 clt   :   0 
+clh   :   0 cli   :   1 cln   :   0 clr   :   0 cls   :   0 clt   :   0 
 clv   :   0 clz   :   0 com   :   0 cp    :   2 cpc   :   0 cpi   :   0 
 cpse  :   0 dec   :   0 eor   :   0 icall :   0 ijmp  :   0 in    :   1 
-inc   :   0 ld    :   0 ldd   :   0 ldi   :  10 lds   :   4 lpm   :   0 
-lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :   9 
+inc   :   0 ld    :   0 ldd   :   0 ldi   :   9 lds   :   4 lpm   :   0 
+lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :  11 
 or    :   0 ori   :   0 out   :   5 pop   :   3 push  :   3 rcall :   3 
-ret   :   1 reti  :   0 rjmp  :   8 rol   :   0 ror   :   0 sbc   :   0 
-sbci  :   0 sbi   :   6 sbic  :   1 sbis  :   1 sbiw  :   0 sbr   :   0 
-sbrc  :   1 sbrs  :   0 sec   :   0 seh   :   0 sei   :   0 sen   :   0 
+ret   :   1 reti  :   0 rjmp  :   4 rol   :   0 ror   :   0 sbc   :   0 
+sbci  :   0 sbi   :   6 sbic  :   1 sbis  :   0 sbiw  :   0 sbr   :   0 
+sbrc  :   0 sbrs  :   0 sec   :   0 seh   :   0 sei   :   0 sen   :   0 
 ser   :   0 ses   :   0 set   :   0 sev   :   0 sez   :   0 sleep :   0 
 spm   :   0 st    :   1 std   :   0 sts   :   3 sub   :   0 subi  :   0 
 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 21 out of 105 (20.0%)
+Instructions used: 18 out of 105 (17.1%)
 
 "ATtiny13A" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x0000ac    154      0    154    1024  15.0%
+[.cseg] 0x000000 0x0000a0    142      0    142    1024  13.9%
 [.dseg] 0x000060 0x000062      0      2      2      64   3.1%
 [.eseg] 0x000000 0x000000      0      0      0      64   0.0%
 

@@ -39,10 +39,6 @@ RESET:
 	ldi		r16, 1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
 	out		DDRB, r16
 
-MAIN:
-	;r17	on/off state (bool)
-
-	clr		r17
 LOOP:
 	;r16	temporary
 	;r21	input voltage
@@ -76,24 +72,16 @@ LOOP:
 	rcall	GET_ADC_VAR
 	lds		r23, VAR_ADC
 
-	sbrc	r17, 0
-	rjmp	IS_ON
-IS_OFF:
+	cp		r22, r21
+	brsh	TURN_OFF
 	cp		r21, r23
 	brsh	TURN_ON
-	rjmp	TURN_OFF
-IS_ON:
-	cp		r21, r22
-	brsh	TURN_ON
-	rjmp	TURN_OFF
-
+	brsh	LOOP
 TURN_ON:
-	ldi		r17, 1
 	sbi		PORTB, OUTPUT_PIN
 	cbi		PORTB, NEG_OUTPUT_PIN
 	rjmp	LOOP
 TURN_OFF:
-	clr		r17
 	sbi		PORTB, NEG_OUTPUT_PIN
 	cbi		PORTB, OUTPUT_PIN
 	rjmp	LOOP
@@ -121,10 +109,9 @@ GET_ADC_VAR:
 	nop
 	sbi		ADCSRA, ADSC
 	nop
+	nop
+	nop
 
-	sbis	ADCSRA, ADSC
-	rjmp	PC-1
-	
 	sbic	ADCSRA, ADSC
 	rjmp	PC-1
 	;in		r16, ADCL ; no need, because ADLAR is used

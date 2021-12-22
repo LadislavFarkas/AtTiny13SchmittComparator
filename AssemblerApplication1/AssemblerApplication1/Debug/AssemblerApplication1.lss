@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Mon Nov 08 13:43:54 2021
+AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Wed Dec 22 08:58:39 2021
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
@@ -492,8 +492,8 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
                                  
                                  ;				   AtTiny13A
                                  ;				    RST	VCC
-                                 ;	(upper treshold)    ADC3    PB4	PB2	ADC1 (input signal)
-                                 ;	(lower treshold)    ADC2    PB3	PB1	!OUTPUT
+                                 ;	(upper treshold)    ADC2    PB4	PB2	ADC1 (input signal)
+                                 ;	(lower treshold)    ADC3    PB3	PB1	!OUTPUT
                                  ;				    GND	PB0	OUTPUT
                                  ;
                                  
@@ -512,7 +512,7 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
 000000 c009                      rjmp	RESET
                                  
                                  .org	ADCCaddr
-000009 c04b                      rjmp	ADC_IRQ
+000009 c050                      rjmp	ADC_IRQ
                                  
                                  .org	INT_VECTORS_SIZE
                                  
@@ -523,130 +523,147 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
 00000c bb07                          out	    DDRB,   r16
 00000d 0000                          nop
                                  
-00000e b705                          in	    r16,    MCUCR
-00000f 6200                          ori	    r16,    1 << SE
-000010 bf05                          out	    MCUCR,  r16
+00000e ef0f                          ser	    r16
+                                 QQ:
+00000f 9ac1                          sbi	    PORTB,  NEG_OUTPUT_PIN
+000010 0000                          nop
 000011 0000                          nop
+000012 98c1                          cbi	    PORTB,  NEG_OUTPUT_PIN
+000013 950a                          dec	    r16
+000014 f7d1                          brne    QQ
+                                 
+000015 b705                          in	    r16,    MCUCR
+000016 6200                          ori	    r16,    1 << SE
+000017 bf05                          out	    MCUCR,  r16
+000018 0000                          nop
                                  
                                  ; input registers: -
-                                 ; output registers: Z, r16, r17
+                                 ; output registers: Z, r17
                                  LOOP:
-000012 e6e0                          ldi	    zl,	    LOW(BUFFER)
-000013 e0f0                          ldi	    zh,	    HIGH(BUFFER)
+000019 e6e0                          ldi	    zl,	    LOW(BUFFER)
+00001a e0f0                          ldi	    zh,	    HIGH(BUFFER)
                                  
-000014 e304                          ldi	    r16,    1 << ADC0D | 1 << ADC1D | 1 << ADC2D
-000015 e013                          ldi	    r17,    1 << MUX1 | 1 << MUX0
-000016 d029                          rcall   READ_ADC
+00001b e003                          ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3
+00001c d025                          rcall   READ_ADC
                                  
-000017 e20c                          ldi	    r16,    1 << ADC0D | 1 << ADC1D | 1 << ADC3D
-000018 e012                          ldi	    r17,    1 << MUX1
-000019 d026                          rcall   READ_ADC
+00001d e002                          ldi	    r16,    1 << MUX1 ; PB4
+00001e d023                          rcall   READ_ADC
                                  
-00001a e308                          ldi	    r16,    1 << ADC0D | 1 << ADC2D | 1 << ADC3D
-00001b e011                          ldi	    r17,    1 << MUX0
-00001c d023                          rcall   READ_ADC
+00001f e001                          ldi	    r16,    1 << MUX0 ; PB2
+000020 d021                          rcall   READ_ADC
                                  
-00001d d001                          rcall   PROCESS
+000021 d001                          rcall   PROCESS
                                  
-00001e cff3                          rjmp    LOOP
+000022 cff6                          rjmp    LOOP
                                      
                                  ; input registers: Z
                                  ; output registers: Z
                                  PROCESS:
-00001f 930f                          push    r16
-000020 931f                          push    r17
-000021 932f                          push    r18
-000022 933f                          push    r19
+000023 930f                          push    r16
+000024 931f                          push    r17
+000025 932f                          push    r18
+000026 933f                          push    r19
                                  
                                      ; input value
-000023 9102                          ld	    r16,    -Z ; H
-000024 9112                          ld	    r17,    -Z ; L
+000027 9102                          ld	    r16,    -Z ; H
+000028 9112                          ld	    r17,    -Z ; L
                                  
                                      ; lower treshold H L
-000025 9122                          ld	    r18,    -Z ; H
-000026 9132                          ld	    r19,    -Z ; L
+000029 9122                          ld	    r18,    -Z ; H
+00002a 9132                          ld	    r19,    -Z ; L
                                  
-000027 1702                          cp	    r16,    r18 ; H
-000028 f080                          brlo    PROCESS_TURN_OFF
-000029 f009                          breq    PROCESS_CHECK_LOWER_L
-00002a c002                          rjmp    PROCES_CHECK_UPPER_H
+00002b 1702                          cp	    r16,    r18 ; H
+00002c f078                          brlo    PROCESS_TURN_OFF	    ; input_h < low_h "vypinam"
+00002d f009                          breq    PROCESS_CHECK_LOWER_L   ; input_h = loh_h "kontrolujem _l pre mozne vypnutie alebo nasledne pre mozne zapnutie"
+00002e c002                          rjmp    PROCES_CHECK_UPPER_H    ; input_h > low_h "kontrolujem _h pre mozne zapnutie"
                                  
                                  PROCESS_CHECK_LOWER_L:
-00002b 1713                          cp	    r17,    r19 ; L
-00002c f060                          brlo    PROCESS_TURN_OFF
+00002f 1713                          cp	    r17,    r19 ; L
+000030 f058                          brlo    PROCESS_TURN_OFF	    ; input_h = low_h & input_l < low_l
                                  
                                  PROCES_CHECK_UPPER_H:
                                      ; upper treshold H L
-00002d 9122                          ld	    r18,    -Z ; H
-00002e 9132                          ld	    r19,    -Z ; L
+000031 9122                          ld	    r18,    -Z ; H
+000032 9132                          ld	    r19,    -Z ; L
                                  
-00002f 1720                          cp	    r18,    r16 ; H
-000030 f028                          brlo    PROCESS_TURN_ON
-000031 f009                          breq    PROCESS_CHECK_UPPER_L
-000032 c008                          rjmp    PROCESS_RET
+000033 1720                          cp	    r18,    r16 ; H
+000034 f028                          brlo    PROCESS_TURN_ON	    ; upper_h < input_h "zapinam"
+000035 f009                          breq    PROCESS_CHECK_UPPER_L   ; upper_h = input_h "kontrolujem _l pre zapnutie"
+000036 c006                          rjmp    PROCESS_RET		    ; upper_h > input_h "bez zmeny:
                                  
                                  PROCESS_CHECK_UPPER_L:
-000033 1731                          cp	    r19,    r17 ; L
-000034 f008                          brlo    PROCESS_TURN_ON
-000035 c005                          rjmp    PROCESS_RET
+000037 1731                          cp	    r19,    r17 ; L
+000038 f008                          brlo    PROCESS_TURN_ON	    ; upper_l < input_l "zapinam"
+000039 c003                          rjmp    PROCESS_RET
                                  
                                  PROCESS_TURN_ON:
-000036 9ac0                          sbi	    PORTB,  OUTPUT_PIN
-000037 98c1                          cbi	    PORTB,  NEG_OUTPUT_PIN
-000038 c002                          rjmp    PROCESS_RET
+00003a 9ac0                          sbi	    PORTB,  OUTPUT_PIN
+                                     ;cbi	    PORTB,  NEG_OUTPUT_PIN
+00003b c001                          rjmp    PROCESS_RET
                                  
                                  PROCESS_TURN_OFF:
-000039 9ac1                          sbi	    PORTB,  NEG_OUTPUT_PIN
-00003a 98c0                          cbi	    PORTB,  OUTPUT_PIN
+                                     ;sbi	    PORTB,  NEG_OUTPUT_PIN
+00003c 98c0                          cbi	    PORTB,  OUTPUT_PIN
                                      
                                  PROCESS_RET:
-00003b 913f                          pop	    r19
-00003c 912f                          pop	    r18
-00003d 911f                          pop	    r17
-00003e 910f                          pop	    r16
-00003f 9508                          ret
+00003d 913f                          pop	    r19
+00003e 912f                          pop	    r18
+00003f 911f                          pop	    r17
+000040 910f                          pop	    r16
+000041 9508                          ret
                                  
-                                 ; input registers: r16, r17
+                                 ; input registers: r16
                                  ; output registers: -
                                  READ_ADC:
-000040 bb04                          out	    DIDR0,  r16
-000041 0000                          nop
+000042 931f                          push    r17
+000043 e11c                          ldi	    r17, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
                                  
-000042 b917                          out	    ADMUX,  r17
-000043 0000                          nop
-000044 0000                          nop
+000044 bb14                          out	    DIDR0,  r17
+000045 0000                          nop
                                  
-000045 9a35                          sbi	    ADCSRA, ADLAR
-000046 0000                          nop
-000047 9a33                          sbi	    ADCSRA, ADIE
+000046 b907                          out	    ADMUX,  r16
+000047 0000                          nop
 000048 0000                          nop
-000049 9a37                          sbi	    ADCSRA, ADEN
+                                 
+000049 9a3d                          sbi	    ADMUX, ADLAR
 00004a 0000                          nop
-00004b 9a36                          sbi	    ADCSRA, ADSC
+00004b 9a33                          sbi	    ADCSRA, ADIE
 00004c 0000                          nop
-00004d 0000                          nop
+00004d 9a37                          sbi	    ADCSRA, ADEN
 00004e 0000                          nop
+00004f 9a36                          sbi	    ADCSRA, ADSC
+000050 0000                          nop
+000051 0000                          nop
+000052 0000                          nop
                                  
-00004f 9478                          sei
-000050 9588                          sleep
-000051 94f8                          cli
+000053 9478                          sei
+000054 9588                          sleep
+000055 94f8                          cli
                                  
-000052 9837                          cbi	    ADCSRA, ADEN
-000053 0000                          nop
+000056 9837                          cbi	    ADCSRA, ADEN
+000057 0000                          nop
                                  
-000054 9508                          ret
+000058 911f                          pop	    r17
+                                 
+000059 9508                          ret
                                  
                                  ; input registers: Z
                                  ; output registers: Z
                                  ADC_IRQ:
-000055 930f                          push    r16
+00005a 930f                          push    r16
+00005b b70f                          in	    r16, sreg
                                  
-000056 b104                          in	    r16,    ADCL
-000057 9301                          st	    Z+,	    r16
-000058 b105                          in	    r16,    ADCH
-000059 9301                          st	    Z+,	    r16
+00005c 931f                          push    r17
                                  
-00005a 910f                          pop	    r16
+00005d b114                          in	    r17,    ADCL
+00005e 9311                          st	    Z+,	    r17
+00005f b115                          in	    r17,    ADCH
+000060 9311                          st	    Z+,	    r17
+                                 
+000061 911f                          pop	    r17
+                                 
+000062 bf0f                          out	    sreg, r16
+000063 910f                          pop	    r16
                                  
 
 
@@ -667,7 +684,7 @@ counted separately from r26..r31 here.
 "ATtiny13A" register use summary:
 x  :   0 y  :   0 z  :   8 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:  20 r17:   9 r18:   6 r19:   6 r20:   0 
+r13:   0 r14:   0 r15:   0 r16:  20 r17:  15 r18:   6 r19:   6 r20:   0 
 r21:   0 r22:   0 r23:   0 r24:   0 r25:   0 r26:   0 r27:   0 r28:   0 
 r29:   0 r30:   1 r31:   1 
 Registers used: 7 out of 35 (20.0%)
@@ -677,26 +694,26 @@ Registers used: 7 out of 35 (20.0%)
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
 brcc  :   0 brcs  :   0 break :   0 breq  :   2 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   4 brlt  :   0 brmi  :   0 
-brne  :   0 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brne  :   1 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
 brvs  :   0 bset  :   0 bst   :   0 cbi   :   3 cbr   :   0 clc   :   0 
 clh   :   0 cli   :   2 cln   :   0 clr   :   0 cls   :   0 clt   :   0 
 clv   :   0 clz   :   0 com   :   0 cp    :   4 cpc   :   0 cpi   :   0 
-cpse  :   0 dec   :   0 eor   :   0 icall :   0 ijmp  :   0 in    :   3 
-inc   :   0 ld    :   6 ldd   :   0 ldi   :   9 lds   :   0 lpm   :   0 
-lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :  12 
-or    :   0 ori   :   1 out   :   4 pop   :   5 push  :   5 rcall :   4 
+cpse  :   0 dec   :   1 eor   :   0 icall :   0 ijmp  :   0 in    :   4 
+inc   :   0 ld    :   6 ldd   :   0 ldi   :   7 lds   :   0 lpm   :   0 
+lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :  14 
+or    :   0 ori   :   1 out   :   5 pop   :   7 push  :   7 rcall :   4 
 ret   :   2 reti  :   1 rjmp  :   7 rol   :   0 ror   :   0 sbc   :   0 
 sbci  :   0 sbi   :   6 sbic  :   0 sbis  :   0 sbiw  :   0 sbr   :   0 
 sbrc  :   0 sbrs  :   0 sec   :   0 seh   :   0 sei   :   1 sen   :   0 
-ser   :   0 ses   :   0 set   :   0 sev   :   0 sez   :   0 sleep :   1 
+ser   :   1 ses   :   0 set   :   0 sev   :   0 sez   :   0 sleep :   1 
 spm   :   0 st    :   2 std   :   0 sts   :   0 sub   :   0 subi  :   0 
 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 21 out of 105 (20.0%)
+Instructions used: 24 out of 105 (22.9%)
 
 "ATtiny13A" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x0000b8    168      0    168    1024  16.4%
+[.cseg] 0x000000 0x0000ca    186      0    186    1024  18.2%
 [.dseg] 0x000060 0x000066      0      6      6      64   9.4%
 [.eseg] 0x000000 0x000000      0      0      0      64   0.0%
 

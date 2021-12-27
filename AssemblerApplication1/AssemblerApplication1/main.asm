@@ -26,9 +26,6 @@ BUFFER	: .BYTE 6   ; UPPER L H | LOWER L H | INPUT L H
 .org	0
 rjmp	RESET
 
-.org	ADCCaddr
-rjmp	ADC_IRQ
-
 .org	INT_VECTORS_SIZE
 
 RESET:
@@ -38,35 +35,25 @@ RESET:
     out	    DDRB,   r16
     nop
 
-    ser	    r16
-QQ:
-    sbi	    PORTB,  NEG_OUTPUT_PIN
-    nop
-    nop
-    cbi	    PORTB,  NEG_OUTPUT_PIN
-    dec	    r16
-    brne    QQ
-
-    in	    r16,    MCUCR
-    ori	    r16,    1 << SE
-    out	    MCUCR,  r16
-    nop
-
 ; input registers: -
 ; output registers: Z, r17
 LOOP:
     ldi	    zl,	    LOW(BUFFER)
     ldi	    zh,	    HIGH(BUFFER)
 
+    ;cbi	    PORTB,  NEG_OUTPUT_PIN
     ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3
     rcall   READ_ADC
 
+    ;sbi	    PORTB,  NEG_OUTPUT_PIN
     ldi	    r16,    1 << MUX1 ; PB4
     rcall   READ_ADC
 
+    ;cbi	    PORTB,  NEG_OUTPUT_PIN
     ldi	    r16,    1 << MUX0 ; PB2
     rcall   READ_ADC
 
+    ;sbi	    PORTB,  NEG_OUTPUT_PIN
     rcall   PROCESS
 
     rjmp    LOOP
@@ -87,24 +74,25 @@ PROCESS:
     ld	    r18,    -Z ; H
     ld	    r19,    -Z ; L
 
+PROCESS_CHECK_LOWER_H:
     cp	    r16,    r18 ; H
-    brlo    PROCESS_TURN_OFF	    ; input_h < low_h "vypinam"
-    breq    PROCESS_CHECK_LOWER_L   ; input_h = loh_h "kontrolujem _l pre mozne vypnutie alebo nasledne pre mozne zapnutie"
-    rjmp    PROCES_CHECK_UPPER_H    ; input_h > low_h "kontrolujem _h pre mozne zapnutie"
+    brlo    PROCESS_TURN_OFF
+    breq    PROCESS_CHECK_LOWER_L
+    rjmp    PROCESS_CHECK_UPPER_H
 
 PROCESS_CHECK_LOWER_L:
     cp	    r17,    r19 ; L
     brlo    PROCESS_TURN_OFF	    ; input_h = low_h & input_l < low_l
 
-PROCES_CHECK_UPPER_H:
+PROCESS_CHECK_UPPER_H:
     ; upper treshold H L
     ld	    r18,    -Z ; H
     ld	    r19,    -Z ; L
 
     cp	    r18,    r16 ; H
-    brlo    PROCESS_TURN_ON	    ; upper_h < input_h "zapinam"
-    breq    PROCESS_CHECK_UPPER_L   ; upper_h = input_h "kontrolujem _l pre zapnutie"
-    rjmp    PROCESS_RET		    ; upper_h > input_h "bez zmeny:
+    brlo    PROCESS_TURN_ON
+    breq    PROCESS_CHECK_UPPER_L
+    rjmp    PROCESS_RET
 
 PROCESS_CHECK_UPPER_L:
     cp	    r19,    r17 ; L
@@ -113,11 +101,11 @@ PROCESS_CHECK_UPPER_L:
 
 PROCESS_TURN_ON:
     sbi	    PORTB,  OUTPUT_PIN
-    ;cbi	    PORTB,  NEG_OUTPUT_PIN
+    cbi	    PORTB,  NEG_OUTPUT_PIN
     rjmp    PROCESS_RET
 
 PROCESS_TURN_OFF:
-    ;sbi	    PORTB,  NEG_OUTPUT_PIN
+    sbi	    PORTB,  NEG_OUTPUT_PIN
     cbi	    PORTB,  OUTPUT_PIN
     
 PROCESS_RET:
@@ -127,22 +115,20 @@ PROCESS_RET:
     pop	    r16
     ret
 
-; input registers: r16
-; output registers: -
+; input registers: Z, r16
+; output registers: Z
 READ_ADC:
     push    r17
     ldi	    r17, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
 
-    out	    DIDR0,  r17
+    out	    DIDR0, r17
     nop
 
-    out	    ADMUX,  r16
+    out	    ADMUX, r16
     nop
     nop
 
     sbi	    ADMUX, ADLAR
-    nop
-    sbi	    ADCSRA, ADIE
     nop
     sbi	    ADCSRA, ADEN
     nop
@@ -151,9 +137,15 @@ READ_ADC:
     nop
     nop
 
-    sei
-    sleep
-    cli
+READ_ADC_W8:
+    in	    r17,    ADCSRA
+    andi    r17,    (1 << ADSC)
+    brne    READ_ADC_W8
+
+    in	    r17,    ADCL
+    st	    Z+,	    r17
+    in	    r17,    ADCH
+    st	    Z+,	    r17
 
     cbi	    ADCSRA, ADEN
     nop
@@ -161,23 +153,3 @@ READ_ADC:
     pop	    r17
 
     ret
-
-; input registers: Z
-; output registers: Z
-ADC_IRQ:
-    push    r16
-    in	    r16, sreg
-
-    push    r17
-
-    in	    r17,    ADCL
-    st	    Z+,	    r17
-    in	    r17,    ADCH
-    st	    Z+,	    r17
-
-    pop	    r17
-
-    out	    sreg, r16
-    pop	    r16
-
-    reti

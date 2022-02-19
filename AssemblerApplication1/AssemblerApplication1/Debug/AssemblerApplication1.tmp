@@ -24,16 +24,22 @@
  <LABELS>
   <BUFFER><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>22</LINE></BUFFER>
   <RESET><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>31</LINE></RESET>
-  <LOOP><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>40</LINE></LOOP>
-  <READ_ADC><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>120</LINE></READ_ADC>
-  <PROCESS><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>63</LINE></PROCESS>
-  <PROCESS_CHECK_LOWER_H><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>77</LINE></PROCESS_CHECK_LOWER_H>
-  <PROCESS_TURN_OFF><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>107</LINE></PROCESS_TURN_OFF>
-  <PROCESS_CHECK_LOWER_L><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>83</LINE></PROCESS_CHECK_LOWER_L>
-  <PROCESS_CHECK_UPPER_H><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>87</LINE></PROCESS_CHECK_UPPER_H>
-  <PROCESS_TURN_ON><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>102</LINE></PROCESS_TURN_ON>
-  <PROCESS_CHECK_UPPER_L><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>97</LINE></PROCESS_CHECK_UPPER_L>
-  <PROCESS_RET><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>111</LINE></PROCESS_RET>
-  <READ_ADC_W8><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>140</LINE></READ_ADC_W8>
+  <UART_DELAY><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>176</LINE></UART_DELAY>
+  <LOOP><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>59</LINE></LOOP>
+  <READ_ADC><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>240</LINE></READ_ADC>
+  <SEND2UART><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>78</LINE></SEND2UART>
+  <PROCESS><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>202</LINE></PROCESS>
+  <UART_RESET_DELAY><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>190</LINE></UART_RESET_DELAY>
+  <SENDr16UART><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>140</LINE></SENDr16UART>
+  <SENDr16UART_nb><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>150</LINE></SENDr16UART_nb>
+  <SENDr16UART_b1><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>158</LINE></SENDr16UART_b1>
+  <SENDr16UART_b0><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>154</LINE></SENDr16UART_b0>
+  <SENDr16UART_d><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>162</LINE></SENDr16UART_d>
+  <UART_DELAY0><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>179</LINE></UART_DELAY0>
+  <UART_RESET_DELAY0><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>193</LINE></UART_RESET_DELAY0>
+  <PROCESS_TURN_OFF><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>229</LINE></PROCESS_TURN_OFF>
+  <PROCESS_TURN_ON><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>224</LINE></PROCESS_TURN_ON>
+  <PROCESS_RET><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>233</LINE></PROCESS_RET>
+  <READ_ADC_W8><FILE>D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>252</LINE></READ_ADC_W8>
  </LABELS>
 </ASSEMBLER_INFO>

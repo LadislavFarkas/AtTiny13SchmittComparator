@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Mon Dec 27 17:52:31 2021
+AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\AssemblerApplication1\main.asm Sat Feb 19 09:42:09 2022
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATtiny_DFP\1.8.332\avrasm\inc\tn13Adef.inc'
@@ -498,13 +498,13 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
                                  ;
                                  
                                  .equ	OUTPUT_PIN = PB0
-                                 .equ	NEG_OUTPUT_PIN = PB1
+                                 .equ	UART_TX = PB1
                                  
                                  .dseg
                                  
                                  .org	SRAM_START
                                  
-000060                           BUFFER	: .BYTE 6   ; UPPER L H | LOWER L H | INPUT L H
+000060                           BUFFER	: .BYTE 3   ; UPPER H | LOWER H | INPUT H
                                  
                                  .cseg
                                  
@@ -516,128 +516,234 @@ AVRASM ver. 2.2.8  D:\workspace\AtTiny13SchmittComparator\AssemblerApplication1\
                                  RESET:
 00000a 94f8                          cli
                                  
-00000b e003                          ldi	    r16,    1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
+00000b e003                          ldi	    r16,    1 << UART_TX | 1 << OUTPUT_PIN
 00000c bb07                          out	    DDRB,   r16
 00000d 0000                          nop
                                  
+                                     ; uart init
+00000e 9ac1                          sbi	    PORTB, UART_TX
+00000f 0000                          nop
+000010 d044                          rcall   UART_DELAY
+                                 
+000011 e10c                          ldi	    r16, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
+000012 bb04                          out	    DIDR0, r16
+000013 0000                          nop
+                                 
+000014 e007                          ldi	    r16, 1 << ADPS2 | 1 << ADPS1 | 1 << ADPS0
+000015 b906                          out	    ADCSRA ,r16
+000016 0000                          nop
+                                 
+000017 9a3d                          sbi	    ADMUX, ADLAR
+000018 0000                          nop
+                                 
+000019 9a37                          sbi	    ADCSRA, ADEN
+00001a 0000                          nop
+                                 
                                  ; input registers: -
-                                 ; output registers: Z, r17
+                                 ; output registers: Z, r16
                                  LOOP:
-00000e e6e0                          ldi	    zl,	    LOW(BUFFER)
-00000f e0f0                          ldi	    zh,	    HIGH(BUFFER)
+00001b e6e0                          ldi	    zl,	    LOW(BUFFER)
+00001c e0f0                          ldi	    zh,	    HIGH(BUFFER)
                                  
-                                     ;cbi	    PORTB,  NEG_OUTPUT_PIN
-000010 e003                          ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3
-000011 d027                          rcall   READ_ADC
+00001d e003                          ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3 - ADC3 - upper
+00001e d05a                          rcall   READ_ADC
                                  
-                                     ;sbi	    PORTB,  NEG_OUTPUT_PIN
-000012 e002                          ldi	    r16,    1 << MUX1 ; PB4
-000013 d025                          rcall   READ_ADC
+00001f e002                          ldi	    r16,    1 << MUX1 ; PB4 - ADC2 - lower
+000020 d058                          rcall   READ_ADC
                                  
-                                     ;cbi	    PORTB,  NEG_OUTPUT_PIN
-000014 e001                          ldi	    r16,    1 << MUX0 ; PB2
-000015 d023                          rcall   READ_ADC
+000021 e001                          ldi	    r16,    1 << MUX0 ; PB2 - ADC1 - input
+000022 d056                          rcall   READ_ADC
                                  
-                                     ;sbi	    PORTB,  NEG_OUTPUT_PIN
-000016 d001                          rcall   PROCESS
+000023 d002                          rcall   SEND2UART
                                  
-000017 cff6                          rjmp    LOOP
+000024 d042                          rcall   PROCESS
+                                 
+000025 cff5                          rjmp    LOOP
                                      
+                                 SEND2UART:
+000026 930f                          push    r16
+000027 931f                          push    r17
+                                 
+000028 2f0e                          mov	    r16, zl
+000029 2f1f                          mov	    r17, zh
+                                 
+00002a 930f                          push    r16
+00002b 931f                          push    r17
+                                 
+00002c d033                          rcall   UART_RESET_DELAY
+                                 
+00002d e402                          ldi	    r16, 'B'
+00002e d013                          rcall   SENDr16UART
+                                 
+00002f e405                          ldi	    r16, 'E'
+000030 d011                          rcall   SENDr16UART
+                                 
+                                     ; UPPER H | LOWER H | INPUT H
+                                 
+                                     ; input value H
+000031 9102                          ld	    r16,    -Z
+000032 d00f                          rcall   SENDr16UART
+                                 
+                                     ; input value L
+                                     ;ld	    r16,    -Z
+                                     ;rcall   SENDr16UART
+                                 
+                                     ; lower treshold H
+000033 9102                          ld	    r16,    -Z
+000034 d00d                          rcall   SENDr16UART
+                                 
+                                     ; lower treshold L
+                                     ;ld	    r16,    -Z
+                                     ;rcall   SENDr16UART
+                                 
+                                     ; upper treshold H
+000035 9102                          ld	    r16,    -Z
+000036 d00b                          rcall   SENDr16UART
+                                 
+                                     ; upper treshold L
+                                     ;ld	    r16,    -Z
+                                     ;rcall   SENDr16UART
+                                 
+000037 e405                          ldi	    r16, 'E'
+000038 d009                          rcall   SENDr16UART
+000039 e404                          ldi	    r16, 'D'
+00003a d007                          rcall   SENDr16UART
+                                 
+00003b 911f                          pop	    r17
+00003c 910f                          pop	    r16
+                                 
+00003d 2fe0                          mov	    zl, r16
+00003e 2ff1                          mov	    zh, r17
+                                 
+00003f 911f                          pop	    r17
+000040 910f                          pop	    r16
+                                 
+000041 9508                          ret
+                                 
+                                 ; inpit registers: R16
+                                 ; output registers:
+                                 SENDr16UART:
+000042 931f                          push    r17
+000043 932f                          push    r18
+                                 
+                                     ; start bit
+000044 98c1                          cbi	    PORTB, UART_TX
+000045 d00f                          rcall   UART_DELAY
+                                 
+000046 e018                          ldi	    r17, 8
+                                 
+                                 SENDr16UART_nb:
+000047 9507                          ror	    r16
+000048 f010                          brcs    SENDr16UART_b1
+                                 
+                                 SENDr16UART_b0:
+000049 98c1                          cbi	    PORTB, UART_TX
+00004a c002                          rjmp    SENDr16UART_d
+                                 
+                                 SENDr16UART_b1:
+00004b 9ac1                          sbi	    PORTB, UART_TX
+00004c c000                          rjmp    SENDr16UART_d
+                                 
+                                 SENDr16UART_d:
+00004d d007                          rcall   UART_DELAY
+00004e 951a                          dec	    r17
+00004f f7b9                          brne    SENDr16UART_nb
+                                 
+                                     ; stop bit
+000050 9ac1                          sbi	    PORTB, UART_TX
+000051 d003                          rcall   UART_DELAY
+                                     
+000052 912f                          pop	    r18
+000053 911f                          pop	    r17
+                                 
+000054 9508                          ret
+                                 
+                                 UART_DELAY: ; 9600 8n1 == 1042 us per frame == 104.2 us per bit
+000055 930f                          push    r16
+000056 ef04                          ldi	    r16, 244
+                                 UART_DELAY0:
+000057 0000                          nop
+000058 950a                          dec	    r16
+000059 f7e9                          brne    UART_DELAY0
+00005a 0000                          nop
+00005b 0000                          nop
+00005c 0000                          nop
+00005d 0000                          nop
+00005e 910f                          pop	    r16
+00005f 9508                          ret
+                                 
+                                 UART_RESET_DELAY:
+000060 930f                          push    r16
+000061 e00b                          ldi	    r16, 11
+                                 UART_RESET_DELAY0:
+000062 dff2                          rcall   UART_DELAY
+000063 950a                          dec	    r16
+000064 f7e9                          brne    UART_RESET_DELAY0
+000065 910f                          pop	    r16
+000066 9508                          ret
+                                 
                                  ; input registers: Z
                                  ; output registers: Z
                                  PROCESS:
-000018 930f                          push    r16
-000019 931f                          push    r17
-00001a 932f                          push    r18
-00001b 933f                          push    r19
+000067 930f                          push    r16
+000068 931f                          push    r17
+                                 
+                                     ; RAM ukazuje za INPUT_H a data su v poradi opbratene : UPPER H | LOWER H | INPUT H
                                  
                                      ; input value
-00001c 9102                          ld	    r16,    -Z ; H
-00001d 9112                          ld	    r17,    -Z ; L
+000069 9102                          ld	    r16,    -Z
                                  
-                                     ; lower treshold H L
-00001e 9122                          ld	    r18,    -Z ; H
-00001f 9132                          ld	    r19,    -Z ; L
+                                     ; lower treshold lower
+00006a 9112                          ld	    r17,    -Z
                                  
-                                 PROCESS_CHECK_LOWER_H:
-000020 1702                          cp	    r16,    r18 ; H
-000021 f080                          brlo    PROCESS_TURN_OFF
-000022 f009                          breq    PROCESS_CHECK_LOWER_L
-000023 c002                          rjmp    PROCESS_CHECK_UPPER_H
+00006b 1701                          cp	    r16,    r17
+00006c f038                          brlo    PROCESS_TURN_OFF
                                  
-                                 PROCESS_CHECK_LOWER_L:
-000024 1713                          cp	    r17,    r19 ; L
-000025 f060                          brlo    PROCESS_TURN_OFF	    ; input_h = low_h & input_l < low_l
+                                     ; lower treshold upper
+00006d 9112                          ld	    r17,    -Z
                                  
-                                 PROCESS_CHECK_UPPER_H:
-                                     ; upper treshold H L
-000026 9122                          ld	    r18,    -Z ; H
-000027 9132                          ld	    r19,    -Z ; L
-                                 
-000028 1720                          cp	    r18,    r16 ; H
-000029 f028                          brlo    PROCESS_TURN_ON
-00002a f009                          breq    PROCESS_CHECK_UPPER_L
-00002b c008                          rjmp    PROCESS_RET
-                                 
-                                 PROCESS_CHECK_UPPER_L:
-00002c 1731                          cp	    r19,    r17 ; L
-00002d f008                          brlo    PROCESS_TURN_ON	    ; upper_l < input_l "zapinam"
-00002e c005                          rjmp    PROCESS_RET
+00006e 1710                          cp	    r17,    r16
+00006f f008                          brlo    PROCESS_TURN_ON
+000070 c005                          rjmp    PROCESS_RET
                                  
                                  PROCESS_TURN_ON:
-00002f 9ac0                          sbi	    PORTB,  OUTPUT_PIN
-000030 98c1                          cbi	    PORTB,  NEG_OUTPUT_PIN
-000031 c002                          rjmp    PROCESS_RET
+000071 9ac0                          sbi	    PORTB,  OUTPUT_PIN
+000072 0000                          nop
+000073 c002                          rjmp    PROCESS_RET
                                  
                                  PROCESS_TURN_OFF:
-000032 9ac1                          sbi	    PORTB,  NEG_OUTPUT_PIN
-000033 98c0                          cbi	    PORTB,  OUTPUT_PIN
+000074 98c0                          cbi	    PORTB,  OUTPUT_PIN
+000075 0000                          nop
                                      
                                  PROCESS_RET:
-000034 913f                          pop	    r19
-000035 912f                          pop	    r18
-000036 911f                          pop	    r17
-000037 910f                          pop	    r16
-000038 9508                          ret
+000076 911f                          pop	    r17
+000077 910f                          pop	    r16
+000078 9508                          ret
                                  
                                  ; input registers: Z, r16
                                  ; output registers: Z
                                  READ_ADC:
-000039 931f                          push    r17
-00003a e11c                          ldi	    r17, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
+000079 931f                          push    r17
                                  
-00003b bb14                          out	    DIDR0, r17
-00003c 0000                          nop
+00007a b907                          out	    ADMUX, r16
+00007b 0000                          nop
+00007c 0000                          nop
                                  
-00003d b907                          out	    ADMUX, r16
-00003e 0000                          nop
-00003f 0000                          nop
-                                 
-000040 9a3d                          sbi	    ADMUX, ADLAR
-000041 0000                          nop
-000042 9a37                          sbi	    ADCSRA, ADEN
-000043 0000                          nop
-000044 9a36                          sbi	    ADCSRA, ADSC
-000045 0000                          nop
-000046 0000                          nop
-000047 0000                          nop
+00007d 9a36                          sbi	    ADCSRA, ADSC
+00007e 0000                          nop
+00007f 0000                          nop
+000080 0000                          nop
                                  
                                  READ_ADC_W8:
-000048 b116                          in	    r17,    ADCSRA
-000049 7410                          andi    r17,    (1 << ADSC)
-00004a f7e9                          brne    READ_ADC_W8
+000081 9936                          sbic    ADCSRA, ADSC
+000082 cffe                          rjmp    READ_ADC_W8
                                  
-00004b b114                          in	    r17,    ADCL
-00004c 9311                          st	    Z+,	    r17
-00004d b115                          in	    r17,    ADCH
-00004e 9311                          st	    Z+,	    r17
+000083 b115                          in	    r17,    ADCH
+000084 9311                          st	    Z+,	    r17
                                  
-00004f 9837                          cbi	    ADCSRA, ADEN
-000050 0000                          nop
+000085 911f                          pop	    r17
                                  
-000051 911f                          pop	    r17
-                                 
-000052 9508                          ret
+000086 9508                          ret
 
 
 RESOURCE USE INFORMATION
@@ -655,39 +761,39 @@ counted separately from r26..r31 here.
 .dseg memory usage only counts static data declared with .byte
 
 "ATtiny13A" register use summary:
-x  :   0 y  :   0 z  :   8 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
+x  :   0 y  :   0 z  :   7 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:  11 r17:  15 r18:   6 r19:   6 r20:   0 
+r13:   0 r14:   0 r15:   0 r16:  37 r17:  20 r18:   2 r19:   0 r20:   0 
 r21:   0 r22:   0 r23:   0 r24:   0 r25:   0 r26:   0 r27:   0 r28:   0 
-r29:   0 r30:   1 r31:   1 
-Registers used: 7 out of 35 (20.0%)
+r29:   0 r30:   3 r31:   3 
+Registers used: 6 out of 35 (17.1%)
 
 "ATtiny13A" instruction use summary:
 .lds  :   0 .sts  :   0 adc   :   0 add   :   0 adiw  :   0 and   :   0 
-andi  :   1 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
-brcc  :   0 brcs  :   0 break :   0 breq  :   2 brge  :   0 brhc  :   0 
-brhs  :   0 brid  :   0 brie  :   0 brlo  :   4 brlt  :   0 brmi  :   0 
-brne  :   1 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
+brcc  :   0 brcs  :   1 break :   0 breq  :   0 brge  :   0 brhc  :   0 
+brhs  :   0 brid  :   0 brie  :   0 brlo  :   2 brlt  :   0 brmi  :   0 
+brne  :   3 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
 brvs  :   0 bset  :   0 bst   :   0 cbi   :   3 cbr   :   0 clc   :   0 
 clh   :   0 cli   :   1 cln   :   0 clr   :   0 cls   :   0 clt   :   0 
-clv   :   0 clz   :   0 com   :   0 cp    :   4 cpc   :   0 cpi   :   0 
-cpse  :   0 dec   :   0 eor   :   0 icall :   0 ijmp  :   0 in    :   3 
-inc   :   0 ld    :   6 ldd   :   0 ldi   :   7 lds   :   0 lpm   :   0 
-lsl   :   0 lsr   :   0 mov   :   0 movw  :   0 neg   :   0 nop   :  10 
-or    :   0 ori   :   0 out   :   3 pop   :   5 push  :   5 rcall :   4 
-ret   :   2 reti  :   0 rjmp  :   6 rol   :   0 ror   :   0 sbc   :   0 
-sbci  :   0 sbi   :   5 sbic  :   0 sbis  :   0 sbiw  :   0 sbr   :   0 
+clv   :   0 clz   :   0 com   :   0 cp    :   2 cpc   :   0 cpi   :   0 
+cpse  :   0 dec   :   3 eor   :   0 icall :   0 ijmp  :   0 in    :   1 
+inc   :   0 ld    :   6 ldd   :   0 ldi   :  15 lds   :   0 lpm   :   0 
+lsl   :   0 lsr   :   0 mov   :   4 movw  :   0 neg   :   0 nop   :  18 
+or    :   0 ori   :   0 out   :   4 pop   :  11 push  :  11 rcall :  18 
+ret   :   6 reti  :   0 rjmp  :   7 rol   :   0 ror   :   1 sbc   :   0 
+sbci  :   0 sbi   :   7 sbic  :   1 sbis  :   0 sbiw  :   0 sbr   :   0 
 sbrc  :   0 sbrs  :   0 sec   :   0 seh   :   0 sei   :   0 sen   :   0 
 ser   :   0 ses   :   0 set   :   0 sev   :   0 sez   :   0 sleep :   0 
-spm   :   0 st    :   2 std   :   0 sts   :   0 sub   :   0 subi  :   0 
+spm   :   0 st    :   1 std   :   0 sts   :   0 sub   :   0 subi  :   0 
 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 19 out of 105 (18.1%)
+Instructions used: 22 out of 105 (21.0%)
 
 "ATtiny13A" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x0000a6    148      0    148    1024  14.5%
-[.dseg] 0x000060 0x000066      0      6      6      64   9.4%
+[.cseg] 0x000000 0x00010e    252      0    252    1024  24.6%
+[.dseg] 0x000060 0x000063      0      3      3      64   4.7%
 [.eseg] 0x000000 0x000000      0      0      0      64   0.0%
 
 Assembly complete, 0 errors, 0 warnings

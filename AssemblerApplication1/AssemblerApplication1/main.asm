@@ -13,13 +13,13 @@
 ;
 
 .equ	OUTPUT_PIN = PB0
-.equ	NEG_OUTPUT_PIN = PB1
+.equ	UART_TX = PB1
 
 .dseg
 
 .org	SRAM_START
 
-BUFFER	: .BYTE 6   ; UPPER L H | LOWER L H | INPUT L H
+BUFFER	: .BYTE 3   ; UPPER H | LOWER H | INPUT H
 
 .cseg
 
@@ -31,86 +31,206 @@ rjmp	RESET
 RESET:
     cli
 
-    ldi	    r16,    1 << NEG_OUTPUT_PIN | 1 << OUTPUT_PIN
+    ldi	    r16,    1 << UART_TX | 1 << OUTPUT_PIN
     out	    DDRB,   r16
     nop
 
+    ; uart init
+    sbi	    PORTB, UART_TX
+    nop
+    rcall   UART_DELAY
+
+    ldi	    r16, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
+    out	    DIDR0, r16
+    nop
+
+    ldi	    r16, 1 << ADPS2 | 1 << ADPS1 | 1 << ADPS0
+    out	    ADCSRA ,r16
+    nop
+
+    sbi	    ADMUX, ADLAR
+    nop
+
+    sbi	    ADCSRA, ADEN
+    nop
+
 ; input registers: -
-; output registers: Z, r17
+; output registers: Z, r16
 LOOP:
     ldi	    zl,	    LOW(BUFFER)
     ldi	    zh,	    HIGH(BUFFER)
 
-    ;cbi	    PORTB,  NEG_OUTPUT_PIN
-    ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3
+    ldi	    r16,    1 << MUX1 | 1 << MUX0 ; PB3 - ADC3 - upper
     rcall   READ_ADC
 
-    ;sbi	    PORTB,  NEG_OUTPUT_PIN
-    ldi	    r16,    1 << MUX1 ; PB4
+    ldi	    r16,    1 << MUX1 ; PB4 - ADC2 - lower
     rcall   READ_ADC
 
-    ;cbi	    PORTB,  NEG_OUTPUT_PIN
-    ldi	    r16,    1 << MUX0 ; PB2
+    ldi	    r16,    1 << MUX0 ; PB2 - ADC1 - input
     rcall   READ_ADC
 
-    ;sbi	    PORTB,  NEG_OUTPUT_PIN
+    rcall   SEND2UART
+
     rcall   PROCESS
 
     rjmp    LOOP
     
+SEND2UART:
+    push    r16
+    push    r17
+
+    mov	    r16, zl
+    mov	    r17, zh
+
+    push    r16
+    push    r17
+
+    rcall   UART_RESET_DELAY
+
+    ldi	    r16, 'B'
+    rcall   SENDr16UART
+
+    ldi	    r16, 'E'
+    rcall   SENDr16UART
+
+    ; UPPER H | LOWER H | INPUT H
+
+    ; input value H
+    ld	    r16,    -Z
+    rcall   SENDr16UART
+
+    ; input value L
+    ;ld	    r16,    -Z
+    ;rcall   SENDr16UART
+
+    ; lower treshold H
+    ld	    r16,    -Z
+    rcall   SENDr16UART
+
+    ; lower treshold L
+    ;ld	    r16,    -Z
+    ;rcall   SENDr16UART
+
+    ; upper treshold H
+    ld	    r16,    -Z
+    rcall   SENDr16UART
+
+    ; upper treshold L
+    ;ld	    r16,    -Z
+    ;rcall   SENDr16UART
+
+    ldi	    r16, 'E'
+    rcall   SENDr16UART
+    ldi	    r16, 'D'
+    rcall   SENDr16UART
+
+    pop	    r17
+    pop	    r16
+
+    mov	    zl, r16
+    mov	    zh, r17
+
+    pop	    r17
+    pop	    r16
+
+    ret
+
+; inpit registers: R16
+; output registers:
+SENDr16UART:
+    push    r17
+    push    r18
+
+    ; start bit
+    cbi	    PORTB, UART_TX
+    rcall   UART_DELAY
+
+    ldi	    r17, 8
+
+SENDr16UART_nb:
+    ror	    r16
+    brcs    SENDr16UART_b1
+
+SENDr16UART_b0:
+    cbi	    PORTB, UART_TX
+    rjmp    SENDr16UART_d
+
+SENDr16UART_b1:
+    sbi	    PORTB, UART_TX
+    rjmp    SENDr16UART_d
+
+SENDr16UART_d:
+    rcall   UART_DELAY
+    dec	    r17
+    brne    SENDr16UART_nb
+
+    ; stop bit
+    sbi	    PORTB, UART_TX
+    rcall   UART_DELAY
+    
+    pop	    r18
+    pop	    r17
+
+    ret
+
+UART_DELAY: ; 9600 8n1 == 1042 us per frame == 104.2 us per bit
+    push    r16
+    ldi	    r16, 244
+UART_DELAY0:
+    nop
+    dec	    r16
+    brne    UART_DELAY0
+    nop
+    nop
+    nop
+    nop
+    pop	    r16
+    ret
+
+UART_RESET_DELAY:
+    push    r16
+    ldi	    r16, 11
+UART_RESET_DELAY0:
+    rcall   UART_DELAY
+    dec	    r16
+    brne    UART_RESET_DELAY0
+    pop	    r16
+    ret
+
 ; input registers: Z
 ; output registers: Z
 PROCESS:
     push    r16
     push    r17
-    push    r18
-    push    r19
+
+    ; RAM ukazuje za INPUT_H a data su v poradi opbratene : UPPER H | LOWER H | INPUT H
 
     ; input value
-    ld	    r16,    -Z ; H
-    ld	    r17,    -Z ; L
+    ld	    r16,    -Z
 
-    ; lower treshold H L
-    ld	    r18,    -Z ; H
-    ld	    r19,    -Z ; L
+    ; lower treshold lower
+    ld	    r17,    -Z
 
-PROCESS_CHECK_LOWER_H:
-    cp	    r16,    r18 ; H
+    cp	    r16,    r17
     brlo    PROCESS_TURN_OFF
-    breq    PROCESS_CHECK_LOWER_L
-    rjmp    PROCESS_CHECK_UPPER_H
 
-PROCESS_CHECK_LOWER_L:
-    cp	    r17,    r19 ; L
-    brlo    PROCESS_TURN_OFF	    ; input_h = low_h & input_l < low_l
+    ; lower treshold upper
+    ld	    r17,    -Z
 
-PROCESS_CHECK_UPPER_H:
-    ; upper treshold H L
-    ld	    r18,    -Z ; H
-    ld	    r19,    -Z ; L
-
-    cp	    r18,    r16 ; H
+    cp	    r17,    r16
     brlo    PROCESS_TURN_ON
-    breq    PROCESS_CHECK_UPPER_L
-    rjmp    PROCESS_RET
-
-PROCESS_CHECK_UPPER_L:
-    cp	    r19,    r17 ; L
-    brlo    PROCESS_TURN_ON	    ; upper_l < input_l "zapinam"
     rjmp    PROCESS_RET
 
 PROCESS_TURN_ON:
     sbi	    PORTB,  OUTPUT_PIN
-    cbi	    PORTB,  NEG_OUTPUT_PIN
+    nop
     rjmp    PROCESS_RET
 
 PROCESS_TURN_OFF:
-    sbi	    PORTB,  NEG_OUTPUT_PIN
     cbi	    PORTB,  OUTPUT_PIN
+    nop
     
 PROCESS_RET:
-    pop	    r19
-    pop	    r18
     pop	    r17
     pop	    r16
     ret
@@ -119,36 +239,22 @@ PROCESS_RET:
 ; output registers: Z
 READ_ADC:
     push    r17
-    ldi	    r17, 1 << ADC1D | 1 << ADC2D | 1 << ADC3D
-
-    out	    DIDR0, r17
-    nop
 
     out	    ADMUX, r16
     nop
     nop
 
-    sbi	    ADMUX, ADLAR
-    nop
-    sbi	    ADCSRA, ADEN
-    nop
     sbi	    ADCSRA, ADSC
     nop
     nop
     nop
 
 READ_ADC_W8:
-    in	    r17,    ADCSRA
-    andi    r17,    (1 << ADSC)
-    brne    READ_ADC_W8
+    sbic    ADCSRA, ADSC
+    rjmp    READ_ADC_W8
 
-    in	    r17,    ADCL
-    st	    Z+,	    r17
     in	    r17,    ADCH
     st	    Z+,	    r17
-
-    cbi	    ADCSRA, ADEN
-    nop
 
     pop	    r17
 
